@@ -1,7 +1,7 @@
 class LineChartStore {
   static setState(newState) {
     LineChartStore.state = Object.assign({}, LineChartStore.state, newState);
-    // console.warn('LineChartStore:state update', LineChartStore.state);
+    console.warn('LineChartStore:state update', LineChartStore.state);
     return LineChartStore.state;
   }
 
@@ -53,6 +53,7 @@ class LineChart {
       this._setMouseXAndDrawCrosshair(pixelX); // todo: touchend anim
     });
     if (data) {
+      LineChartStore.setState({ chartData: data });
       this._calculateLowHigh(data.data);
       this._calculateStep(data);
       if (LineChartStore.getState().chartOptions.startAnimationEnabled) {
