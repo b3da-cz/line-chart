@@ -28,13 +28,17 @@ const chartData = {
 ```
 const chartOptions = {
   xPadding: canvas.width / 100,
-  yPadding: canvas.width / 100,
+  yPadding: canvas.height / 100,
   lineColor: 'rgb(38,118,247)',
   lineWidth: canvas.width / 300,
   lineShadow: false,
+  fillEnabled: false,
+  fillColor: 'rgba(38,118,247,0.3)',
   crosshairColor: 'rgb(100,100,150)',
   crosshairWidth: canvas.width / 750,
   crosshairEnabled: true,
+  crosshairEventEnabled: false,
+  crosshairMouseLikeTouch: false,
   crosshairDashed: true,
   tooltipEnabled: true,
   tooltipSize: 1.25,
@@ -42,7 +46,7 @@ const chartOptions = {
   tooltipPrefix: '$ ',
   tooltipPostfix: '',
   startAnimationEnabled: true,
-  startAnimationSpeed: 10, // 1 - x
+  startAnimationSpeed: 30, // 1 - x
 }
 ```
 
@@ -60,6 +64,17 @@ chart.pushPoint(7, 'bazz')
 * or set new data:
 ```
 chart.setData(chartData)
+```
+
+* if `chartOptions.crosshairEnabled === true && chartOptions.crosshairEventEnabled === true` you can listen for tooltip update:
+```
+chart.listenForCrosshairUpdate(event => {
+  // event = {
+  //   positionX: crosshair X position
+  //   label: label on position
+  //   data: data on position
+  // }
+})
 ```
 
 that's it ;)

@@ -15,15 +15,19 @@ class LineChart {
   constructor(canvas, options, data = null) {
     LineChartStore.setState({
       chartInitialized: true,
-      chartOptions: Object.assign({}, options, {
+      chartOptions: Object.assign({
         xPadding: canvas.width / 100,
-        yPadding: canvas.width / 100,
+        yPadding: canvas.height / 100,
         lineColor: 'rgb(38,118,247)',
         lineWidth: canvas.width / 300,
         lineShadow: false,
+        fillEnabled: false,
+        fillColor: 'rgba(38,118,247,0.3)',
         crosshairColor: 'rgb(100,100,150)',
         crosshairWidth: canvas.width / 750,
         crosshairEnabled: true,
+        crosshairEventEnabled: false,
+        crosshairMouseLikeTouch: false,
         crosshairDashed: true,
         tooltipEnabled: true,
         tooltipSize: 1.25,
@@ -31,27 +35,12 @@ class LineChart {
         tooltipPrefix: '$ ',
         tooltipPostfix: '',
         startAnimationEnabled: true,
-        startAnimationSpeed: 10,
-      }),
+        startAnimationSpeed: 30,
+      }, options),
     });
     this.canvas = canvas;
     this.canvasCtx = this.canvas.getContext('2d');
-    this.canvas.onmousemove = (e) => {
-      const pixelX = e.pageX - this.canvas.offsetLeft;
-      this._setMouseXAndDrawCrosshair(pixelX);
-    };
-    this.canvas.addEventListener('touchstart', (e) => {
-      const pixelX = e.changedTouches[0].clientX - this.canvas.offsetLeft;
-      this._setMouseXAndDrawCrosshair(pixelX); // todo: touchstart anim
-    });
-    this.canvas.addEventListener('touchmove', (e) => {
-      const pixelX = e.changedTouches[0].clientX - this.canvas.offsetLeft;
-      this._setMouseXAndDrawCrosshair(pixelX);
-    });
-    this.canvas.addEventListener('touchend', (e) => {
-      const pixelX = e.changedTouches[0].clientX - this.canvas.offsetLeft;
-      this._setMouseXAndDrawCrosshair(pixelX); // todo: touchend anim
-    });
+    this._handleInteractions();
     if (data) {
       LineChartStore.setState({ chartData: data });
       this._calculateLowHigh(data.data);
@@ -90,6 +79,12 @@ class LineChart {
     }).catch(error => console.warn('pushAnimation error', error));
   }
 
+  listenForCrosshairUpdate(callback) {
+    document.addEventListener('lineChartOnCrosshairUpdate', e => {
+      callback ? callback(e.detail) : null;
+    });
+  }
+
   _calculateStep(data) {
     let state = LineChartStore.getState();
     this.stepX = (this.canvas.width - (2 * state.chartOptions.xPadding)) / data.data.length;
@@ -125,7 +120,6 @@ class LineChart {
       return;
     }
     this._draw();
-    // this.chartScaleY = this.chartScaleY + (this.chartScaleY / 7); // speed up
     this.chartScaleY = this.chartScaleY + ((1 - this.chartScaleY) / LineChartStore.getState().chartOptions.startAnimationSpeed);
     this.animationFrameReqId = window.requestAnimationFrame(() => this._startAnimation());
   }
@@ -187,12 +181,21 @@ class LineChart {
     this.canvasCtx.stroke();
     this.canvasCtx.closePath();
 
+    if (state.chartOptions.fillEnabled) {
+      this._fillChart();
+    }
+
     if (
       state.chartOptions.crosshairEnabled
+      && !this.hideCrosshair
       && this.mouseX
       && this.mouseX > state.chartOptions.xPadding + this.stepX
       && this.mouseX < (this.canvas.width - state.chartOptions.xPadding)
     ) {
+      if (state.chartOptions.crosshairEventEnabled) {
+        this._dispatchEvent(this.mouseX, crosshairTitleTime, crosshairTitlePrice);
+      }
+
       if (state.chartOptions.lineShadow) {
         this.canvasCtx.shadowOffsetX = 0;
         this.canvasCtx.shadowOffsetY = 0;
@@ -200,7 +203,7 @@ class LineChart {
         this.canvasCtx.shadowBlur = 0;
       }
       if (state.chartOptions.crosshairDashed) {
-        this.canvasCtx.setLineDash([(this.canvas.width / 500), (this.canvas.width / 200)]);
+        this.canvasCtx.setLineDash([(this.canvas.width / 350), (this.canvas.width / 100)]);
       }
       this.canvasCtx.lineWidth = state.chartOptions.crosshairWidth;
       this.canvasCtx.strokeStyle = state.chartOptions.crosshairColor;
@@ -211,21 +214,104 @@ class LineChart {
         this.canvasCtx.moveTo(0, crosshairY);
         this.canvasCtx.lineTo(this.canvas.width, crosshairY);
       }
-      if (crosshairTitlePrice) {
+      this.canvasCtx.closePath();
+      this.canvasCtx.stroke();
+      if (crosshairTitlePrice && state.chartOptions.tooltipEnabled) {
+        this.canvasCtx.fillStyle = 'rgba(255,255,255,0.6)';
+        this.canvasCtx.fillRect(0, 0, (this.canvas.height / 20) * crosshairTitlePrice.length, state.chartOptions.yPadding * 10 * state.chartOptions.tooltipSize);
         this.canvasCtx.fillStyle = state.chartOptions.crosshairColor;
         this.canvasCtx.textAlign = 'left';
         this.canvasCtx.font = ((this.canvas.height / 25) * state.chartOptions.tooltipSize) + 'px ' + state.chartOptions.tooltipFont;
-        this.canvasCtx.fillText(crosshairTitleTime, state.chartOptions.xPadding, (state.chartOptions.yPadding * 2));
+        this.canvasCtx.fillText(crosshairTitleTime, state.chartOptions.xPadding, (state.chartOptions.yPadding * 4));
         this.canvasCtx.font = 'bold ' + ((this.canvas.height / 15) * state.chartOptions.tooltipSize) + 'px ' + state.chartOptions.tooltipFont;
-        this.canvasCtx.fillText(crosshairTitlePrice, state.chartOptions.xPadding, (state.chartOptions.yPadding * 2 * state.chartOptions.tooltipSize) + (this.canvas.height / 16));
+        this.canvasCtx.fillText(crosshairTitlePrice, state.chartOptions.xPadding, (state.chartOptions.yPadding * 4 * state.chartOptions.tooltipSize) + (this.canvas.height / 16));
       }
-      this.canvasCtx.stroke();
-      this.canvasCtx.closePath();
       if (state.chartOptions.crosshairDashed) {
         this.canvasCtx.setLineDash([0]);
       }
     }
     this.isDrawing = false;
+  }
+
+  _fillChart() {
+    let state = LineChartStore.getState();
+    this.canvasCtx.lineWidth = 0.1;
+    this.canvasCtx.strokeStyle = state.chartOptions.fillColor;
+    this.canvasCtx.lineCap = 'round';
+    this.canvasCtx.lineJoin = 'round';
+
+    this.canvasCtx.beginPath();
+    this.canvasCtx.moveTo(state.chartOptions.xPadding + (state.chartOptions.lineWidth / 2), this.canvas.height - state.chartOptions.yPadding + state.chartOptions.lineWidth);
+    this.canvasCtx.lineTo(state.chartOptions.xPadding, this.canvas.height - ((Number(state.chartData[0]) - state.low) * this.stepY) - state.chartOptions.yPadding + state.chartOptions.lineWidth);
+    state.chartData.data.forEach((item, i) => {
+      let y = 0;
+      if (state.chartOptions.startAnimationEnabled) {
+        y = this.canvas.height - (((Number(item) - state.low) * this.stepY) * this.chartScaleY) - state.chartOptions.yPadding;
+      } else {
+        y = this.canvas.height - ((Number(item) - state.low) * this.stepY) - state.chartOptions.yPadding;
+      }
+      let x = (this.stepX * (i + 1)) + Number(state.chartOptions.xPadding);
+      this.canvasCtx.lineTo(x, y);
+    });
+    this.canvasCtx.lineTo(this.canvas.width - state.chartOptions.xPadding, this.canvas.height - state.chartOptions.yPadding + state.chartOptions.lineWidth);
+    this.canvasCtx.fillStyle = state.chartOptions.fillColor;
+    this.canvasCtx.closePath();
+    this.canvasCtx.fill();
+    this.canvasCtx.stroke();
+  }
+
+  _handleInteractions() {
+    this.canvas.onmousemove = (e) => {
+      const pixelX = e.pageX - this.canvas.offsetLeft;
+      this._setMouseXAndDrawCrosshair(pixelX);
+    };
+    if (LineChartStore.getState().chartOptions.crosshairMouseLikeTouch) {
+      this.hideCrosshair = true;
+      this.canvas.onmousedown = () => {
+        this.hideCrosshair = false;
+        this._draw();
+      };
+      this.canvas.onmouseup = () => {
+        this.hideCrosshair = true;
+        this._draw();
+        this._dispatchEvent(0, '', '');
+      };
+    } else {
+      this.canvas.onmouseenter = () => {
+        this.hideCrosshair = false;
+        this._draw();
+      };
+      this.canvas.onmouseleave = () => {
+        this.hideCrosshair = true;
+        this._draw();
+        this._dispatchEvent(0, '', '');
+      };
+    }
+    this.canvas.addEventListener('touchstart', (e) => {
+      this.hideCrosshair = false;
+      const pixelX = e.changedTouches[0].clientX - this.canvas.offsetLeft;
+      this._setMouseXAndDrawCrosshair(pixelX); // todo: touchstart anim
+    });
+    this.canvas.addEventListener('touchmove', (e) => {
+      const pixelX = e.changedTouches[0].clientX - this.canvas.offsetLeft;
+      this._setMouseXAndDrawCrosshair(pixelX);
+    });
+    this.canvas.addEventListener('touchend', () => {
+      this.hideCrosshair = true;
+      this._draw();
+      this._dispatchEvent(0, '', '');
+    });
+  }
+
+  _dispatchEvent(positionX, label, data) {
+    const event = new CustomEvent('lineChartOnCrosshairUpdate', {
+      detail: {
+        positionX: positionX,
+        label: label,
+        data: data,
+      }
+    });
+    document.dispatchEvent(event);
   }
 
   static formatTime(timeString, withYear = false) {
