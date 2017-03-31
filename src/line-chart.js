@@ -28,6 +28,11 @@ class LineChart {
     });
     this.canvas = canvas;
     this.canvasCtx = this.canvas.getContext('2d');
+    if (this.state && this.state.chartOptions && this.state.chartOptions.debugMessagesEnabled && this.canvas && this.canvas.id) {
+      console.info('LineChart id: ' + this.canvas.id + ' initialized');
+    } else if (!this.canvas || (this.canvas && !this.canvas.id)) {
+      console.warn('LineChart warning: canvas element should have some id! (some parts depends on it)');
+    }
     this._handleInteractions();
     if (data) {
       this.setState({ chartData: data });
@@ -68,7 +73,7 @@ class LineChart {
   }
 
   listenForCrosshairUpdate(callback) {
-    document.addEventListener('lineChartOnCrosshairUpdate', e => {
+    document.addEventListener('lineChartOnCrosshairUpdate-' + this.canvas.id, e => {
       callback ? callback(e.detail) : null;
     });
   }
@@ -306,7 +311,7 @@ class LineChart {
   }
 
   _dispatchEvent(positionX, label, data) {
-    const event = new CustomEvent('lineChartOnCrosshairUpdate', {
+    const event = new CustomEvent('lineChartOnCrosshairUpdate-' + this.canvas.id, {
       detail: {
         positionX: positionX,
         label: label,
