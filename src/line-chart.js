@@ -268,13 +268,15 @@ class LineChart {
   }
 
   _handleInteractions() {
-    this.canvas.onmousemove = (e) => {
+    this.canvas.onmousemove = e => {
+      e.preventDefault();
       const pixelX = e.pageX - this.canvas.offsetLeft;
       this._setMouseXAndDrawCrosshair(pixelX);
     };
     if (this.state.chartOptions.crosshairMouseLikeTouch) {
       this.hideCrosshair = true;
-      this.canvas.onmousedown = () => {
+      this.canvas.onmousedown = e => {
+        e.preventDefault();
         this.hideCrosshair = false;
         this._draw();
       };
@@ -294,12 +296,14 @@ class LineChart {
         this._dispatchEvent(0, '', '');
       };
     }
-    this.canvas.addEventListener('touchstart', (e) => {
+    this.canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
       this.hideCrosshair = false;
       const pixelX = e.changedTouches[0].clientX - this.canvas.offsetLeft;
       this._setMouseXAndDrawCrosshair(pixelX); // todo: touchstart anim
     });
-    this.canvas.addEventListener('touchmove', (e) => {
+    this.canvas.addEventListener('touchmove', e => {
+      e.preventDefault();
       const pixelX = e.changedTouches[0].clientX - this.canvas.offsetLeft;
       this._setMouseXAndDrawCrosshair(pixelX);
     });
