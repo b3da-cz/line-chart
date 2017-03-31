@@ -1,19 +1,6 @@
-class LineChartStore {
-  static setState(newState) {
-    LineChartStore.state = Object.assign({}, LineChartStore.state, newState);
-    console.warn('LineChartStore:state update', LineChartStore.state);
-    return LineChartStore.state;
-  }
-
-  static getState() {
-    return LineChartStore.state;
-  }
-}
-
-
 class LineChart {
   constructor(canvas, options, data = null) {
-    LineChartStore.setState({
+    this.setState({
       chartInitialized: true,
       chartOptions: Object.assign({
         xPadding: canvas.width / 100,
@@ -36,16 +23,17 @@ class LineChart {
         tooltipPostfix: '',
         startAnimationEnabled: true,
         startAnimationSpeed: 30,
+        debugMessagesEnabled: false,
       }, options),
     });
     this.canvas = canvas;
     this.canvasCtx = this.canvas.getContext('2d');
     this._handleInteractions();
     if (data) {
-      LineChartStore.setState({ chartData: data });
+      this.setState({ chartData: data });
       this._calculateLowHigh(data.data);
       this._calculateStep(data);
-      if (LineChartStore.getState().chartOptions.startAnimationEnabled) {
+      if (this.state.chartOptions.startAnimationEnabled) {
         this._startAnimation();
       } else {
         this._draw();
@@ -64,17 +52,17 @@ class LineChart {
   }
 
   pushPoint(value, label) {
-    let chartData = Object.assign({}, LineChartStore.getState().chartData);
+    let chartData = Object.assign({}, this.state.chartData);
     chartData.data.push(value);
     chartData.labels.push(label);
-    LineChartStore.setState({ chartData: chartData });
+    this.setState({ chartData: chartData });
     this._calculateLowHigh(chartData.data);
     this._calculateStep(chartData);
     this._pushAnimation().then(() => { // todo: debug stepY update
-      chartData = Object.assign({}, LineChartStore.getState().chartData);
+      chartData = Object.assign({}, this.state.chartData);
       chartData.data.splice(0, 1);
       chartData.labels.splice(0, 1);
-      LineChartStore.setState({ chartData: chartData });
+      this.setState({ chartData: chartData });
       this._draw();
     }).catch(error => console.warn('pushAnimation error', error));
   }
@@ -85,8 +73,18 @@ class LineChart {
     });
   }
 
+  setState(newState) {
+    this.state.chartOptions.debugMessagesEnabled ? console.info('LineChart id: ' + this.canvas.id + ' state update: old state', this.state) : null;
+    this.state = Object.assign({}, this.state, newState);
+    this.state.chartOptions.debugMessagesEnabled ? console.info('LineChart id: ' + this.canvas.id + ' state update: new state', this.state) : null;
+  }
+
+  getState() {
+    return this.state;
+  }
+
   _calculateStep(data) {
-    let state = LineChartStore.getState();
+    let state = this.state;
     this.stepX = (this.canvas.width - (2 * state.chartOptions.xPadding)) / data.data.length;
     this.stepY = (this.canvas.height- (2 * state.chartOptions.yPadding)) / (state.high - state.low);
     return [this.stepX, this.stepY];
@@ -98,7 +96,7 @@ class LineChart {
       if (Number(value) < low) { low = Number(value) }
       if (Number(value) > high) { high = Number(value) }
     });
-    LineChartStore.setState({ low: low, high: high });
+    this.setState({ low: low, high: high });
   }
 
   _setMouseXAndDrawCrosshair(pixelX) {
@@ -120,7 +118,7 @@ class LineChart {
       return;
     }
     this._draw();
-    this.chartScaleY = this.chartScaleY + ((1 - this.chartScaleY) / LineChartStore.getState().chartOptions.startAnimationSpeed);
+    this.chartScaleY = this.chartScaleY + ((1 - this.chartScaleY) / this.state.chartOptions.startAnimationSpeed);
     this.animationFrameReqId = window.requestAnimationFrame(() => this._startAnimation());
   }
 
@@ -136,14 +134,14 @@ class LineChart {
         return resolve(true);
       }
       this._draw();
-      this.chartOffsetX = this.chartOffsetX + ((this.stepX - this.chartOffsetX) / LineChartStore.getState().chartOptions.startAnimationSpeed);
+      this.chartOffsetX = this.chartOffsetX + ((this.stepX - this.chartOffsetX) / this.state.chartOptions.startAnimationSpeed);
       this.animationFrameReqId = window.requestAnimationFrame(() => this._startAnimation());
     })
   }
 
   _draw() {
     this.isDrawing = true;
-    let state = LineChartStore.getState();
+    let state = this.state;
     let crosshairY = null;
     let crosshairTitlePrice = null;
     let crosshairTitleTime = null;
@@ -234,7 +232,7 @@ class LineChart {
   }
 
   _fillChart() {
-    let state = LineChartStore.getState();
+    let state = this.state;
     this.canvasCtx.lineWidth = 0.1;
     this.canvasCtx.strokeStyle = state.chartOptions.fillColor;
     this.canvasCtx.lineCap = 'round';
@@ -265,7 +263,7 @@ class LineChart {
       const pixelX = e.pageX - this.canvas.offsetLeft;
       this._setMouseXAndDrawCrosshair(pixelX);
     };
-    if (LineChartStore.getState().chartOptions.crosshairMouseLikeTouch) {
+    if (this.state.chartOptions.crosshairMouseLikeTouch) {
       this.hideCrosshair = true;
       this.canvas.onmousedown = () => {
         this.hideCrosshair = false;
