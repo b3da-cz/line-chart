@@ -74,9 +74,13 @@ class LineChart {
   }
 
   setState(newState) {
-    this.state.chartOptions.debugMessagesEnabled ? console.info('LineChart id: ' + this.canvas.id + ' state update: old state', this.state) : null;
+    if (this.state && this.state.chartOptions && this.state.chartOptions.debugMessagesEnabled) {
+      console.info('LineChart id: ' + this.canvas.id + ' state update: old state', this.state);
+    }
     this.state = Object.assign({}, this.state, newState);
-    this.state.chartOptions.debugMessagesEnabled ? console.info('LineChart id: ' + this.canvas.id + ' state update: new state', this.state) : null;
+    if (this.state && this.state.chartOptions && this.state.chartOptions.debugMessagesEnabled) {
+      console.info('LineChart id: ' + this.canvas.id + ' state update: new state', this.state);
+    }
   }
 
   getState() {
