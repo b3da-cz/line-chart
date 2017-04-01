@@ -184,7 +184,7 @@ class LineChart {
         const currentTitle = state.chartData.labels.filter((_, ti) => i === ti)[0];
         crosshairY = y;
         crosshairTitlePrice = state.chartOptions.tooltipPrefix + Number(item).toFixed(2) + state.chartOptions.tooltipPostfix;
-        crosshairTitleTime = state. chartOptions.labelFormatTimeEnabled ? LineChart.formatTime(currentTitle) : currentTitle;
+        crosshairTitleTime = state.chartOptions.labelFormatTimeEnabled ? LineChart.formatTime(currentTitle) : currentTitle;
       }
     });
     this.canvasCtx.stroke();
