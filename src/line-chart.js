@@ -21,6 +21,7 @@ class LineChart {
         tooltipFont: 'Roboto Mono',
         tooltipPrefix: '$ ',
         tooltipPostfix: '',
+        labelFormatTimeEnabled: false,
         startAnimationEnabled: true,
         startAnimationSpeed: 30,
         debugMessagesEnabled: false,
@@ -180,9 +181,10 @@ class LineChart {
       let x = (this.stepX * (i + 1)) + Number(state.chartOptions.xPadding);
       this.canvasCtx.lineTo(x, y);
       if (this.mouseX && (this.mouseX > x && this.mouseX < (x + this.stepX))) {
+        const currentTitle = state.chartData.labels.filter((_, ti) => i === ti)[0];
         crosshairY = y;
         crosshairTitlePrice = state.chartOptions.tooltipPrefix + Number(item).toFixed(2) + state.chartOptions.tooltipPostfix;
-        crosshairTitleTime = LineChart.formatTime(state.chartData.labels.filter((_, ti) => i === ti)[0]);
+        crosshairTitleTime = state. chartOptions.labelFormatTimeEnabled ? LineChart.formatTime(currentTitle) : currentTitle;
       }
     });
     this.canvasCtx.stroke();

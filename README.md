@@ -45,12 +45,14 @@ const chartOptions = {
   tooltipFont: 'Roboto Mono',
   tooltipPrefix: '$ ',
   tooltipPostfix: '',
+  labelFormatTimeEnabled: false,
   startAnimationEnabled: true,
   startAnimationSpeed: 30, // 1 - x
+  debugMessagesEnabled: false,
 }
 ```
 
-* create chart:
+* create chart (canvas element id is required for multiple chart instances):
 ```
 const canvas = document.getElementById('chart')
 const chart = new LineChart(canvas, chartOptions, chartData)
