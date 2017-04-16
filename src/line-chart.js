@@ -272,7 +272,7 @@ class LineChart {
   _handleInteractions() {
     this.canvas.onmousemove = e => {
       e.preventDefault();
-      const pixelX = e.pageX - this.canvas.offsetLeft;
+      const pixelX = e.pageX - this.canvas.getBoundingClientRect().left;
       this._setMouseXAndDrawCrosshair(pixelX);
     };
     if (this.state.chartOptions.crosshairMouseLikeTouch) {
@@ -301,12 +301,12 @@ class LineChart {
     this.canvas.addEventListener('touchstart', e => {
       e.preventDefault();
       this.hideCrosshair = false;
-      const pixelX = e.changedTouches[0].clientX - this.canvas.offsetLeft;
+      const pixelX = e.changedTouches[0].clientX - this.canvas.getBoundingClientRect().left;
       this._setMouseXAndDrawCrosshair(pixelX); // todo: touchstart anim
     });
     this.canvas.addEventListener('touchmove', e => {
       e.preventDefault();
-      const pixelX = e.changedTouches[0].clientX - this.canvas.offsetLeft;
+      const pixelX = e.changedTouches[0].clientX - this.canvas.getBoundingClientRect().left;
       this._setMouseXAndDrawCrosshair(pixelX);
     });
     this.canvas.addEventListener('touchend', () => {
