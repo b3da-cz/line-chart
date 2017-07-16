@@ -95,7 +95,7 @@ class LineChart {
 
   _calculateStep(data) {
     let state = this.state;
-    this.stepX = (this.canvas.width - (2 * state.chartOptions.xPadding)) / data.data.length;
+    this.stepX = (this.canvas.width - (2 * state.chartOptions.xPadding)) / (data.data.length - 1);
     this.stepY = (this.canvas.height- (2 * state.chartOptions.yPadding)) / (state.high - state.low);
     return [this.stepX, this.stepY];
   }
@@ -178,7 +178,7 @@ class LineChart {
       } else {
         y = this.canvas.height - ((Number(item) - state.low) * this.stepY) - state.chartOptions.yPadding;
       }
-      let x = (this.stepX * (i + 1)) + Number(state.chartOptions.xPadding);
+      let x = (this.stepX * i) + Number(state.chartOptions.xPadding);
       this.canvasCtx.lineTo(x, y);
       if (this.mouseX && (this.mouseX > x && this.mouseX < (x + this.stepX))) {
         const currentTitle = state.chartData.labels.filter((_, ti) => i === ti)[0];
