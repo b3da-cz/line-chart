@@ -1,5 +1,7 @@
 class LineChart {
   constructor(canvas, options, data = null) {
+    this.canvas = canvas;
+    this.canvasCtx = this.canvas.getContext('2d');
     this.setState({
       chartInitialized: true,
       chartOptions: Object.assign({
@@ -27,8 +29,6 @@ class LineChart {
         debugMessagesEnabled: false,
       }, options),
     });
-    this.canvas = canvas;
-    this.canvasCtx = this.canvas.getContext('2d');
     if (this.state && this.state.chartOptions && this.state.chartOptions.debugMessagesEnabled && this.canvas && this.canvas.id) {
       console.info('LineChart id: ' + this.canvas.id + ' initialized');
     } else if (!this.canvas || (this.canvas && !this.canvas.id)) {
@@ -259,7 +259,7 @@ class LineChart {
       } else {
         y = this.canvas.height - ((Number(item) - state.low) * this.stepY) - state.chartOptions.yPadding;
       }
-      let x = (this.stepX * (i + 1)) + Number(state.chartOptions.xPadding);
+      let x = (this.stepX * i) + Number(state.chartOptions.xPadding);
       this.canvasCtx.lineTo(x, y);
     });
     this.canvasCtx.lineTo(this.canvas.width - state.chartOptions.xPadding, this.canvas.height - state.chartOptions.yPadding + state.chartOptions.lineWidth);
